@@ -44,7 +44,7 @@ class JSONLToNeo4j:
                 if r["type"] == "edge":
                     rel_type = r["label"]
 
-                    print(f"EDGE: {r['from']} -> {r['to']} ({rel_type})")
+                    # print(f"EDGE: {r['from']} -> {r['to']} ({rel_type})")
 
                     session.run(
                         f"""MATCH (a {{id: $from_id}}) MATCH (b {{id: $to_id}}) MERGE (a)-[:{rel_type}]->(b)""", #type: ignore

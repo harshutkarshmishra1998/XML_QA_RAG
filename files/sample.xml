@@ -1,0 +1,67 @@
+<POWERMART>
+  <REPOSITORY NAME="Sample_Repo">
+    <FOLDER NAME="Sample_Project">
+
+      <!-- DATA LAYER -->
+
+      <SOURCE NAME="CUSTOMER_RAW" DATABASETYPE="Teradata">
+        <SOURCEFIELD NAME="CUST_ID" DATATYPE="decimal" KEYTYPE="PRIMARY KEY"/>
+        <SOURCEFIELD NAME="FIRST_NAME" DATATYPE="varchar"/>
+        <SOURCEFIELD NAME="LAST_NAME" DATATYPE="varchar"/>
+        <SOURCEFIELD NAME="ACTIVE_FLAG" DATATYPE="char"/>
+      </SOURCE>
+
+      <TARGET NAME="CUSTOMER_FINAL">
+        <TARGETFIELD NAME="CUST_ID"/>
+        <TARGETFIELD NAME="FULL_NAME"/>
+      </TARGET>
+
+      <!-- LOGIC LAYER -->
+
+      <!-- Command Task -->
+      <TASK NAME="Prepare_Files" TYPE="Command">
+        <VALUEPAIR VALUE="/scripts/prepare_files.sh"/>
+      </TASK>
+
+      <!-- Session Task -->
+      <TASK NAME="s_Load_Customer" TYPE="Session">
+        <ATTRIBUTE NAME="Mapping Name" VALUE="m_Load_Customer"/>
+      </TASK>
+
+
+      <!-- MAPPING (ETL LOGIC) -->
+      <MAPPING NAME="m_Load_Customer">
+
+        <SOURCE NAME="CUSTOMER_RAW"/>
+
+        <TRANSFORMATION NAME="Filter_Active" TYPE="Filter">
+          <TABLEATTRIBUTE NAME="Condition" VALUE="ACTIVE_FLAG = 'Y'"/>
+        </TRANSFORMATION>
+
+        <TRANSFORMATION NAME="Exp_FullName" TYPE="Expression">
+          <TRANSFORMFIELD NAME="FULL_NAME"
+                          EXPRESSION="FIRST_NAME || LAST_NAME"/>
+        </TRANSFORMATION>
+
+        <TARGET NAME="CUSTOMER_FINAL"/>
+
+      </MAPPING>
+       
+        <!-- FLOW LAYER -->
+
+      <WORKLET NAME="Customer_Workflow">
+
+        <!-- TASK INSTANCES -->
+        <TASKINSTANCE NAME="Start" TASKTYPE="Start"/>
+        <TASKINSTANCE NAME="Prepare_Files" TASKTYPE="Command"/>
+        <TASKINSTANCE NAME="s_Load_Customer" TASKTYPE="Session"/>
+
+        <!-- FLOW -->
+        <WORKFLOWLINK FROMTASK="Start" TOTASK="Prepare_Files"/>
+        <WORKFLOWLINK FROMTASK="Prepare_Files" TOTASK="s_Load_Customer"/>
+
+      </WORKLET>
+
+    </FOLDER>
+  </REPOSITORY>
+</POWERMART>

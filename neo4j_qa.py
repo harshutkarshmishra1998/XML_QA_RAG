@@ -1,73 +1,43 @@
 import os
-# Use langchain_neo4j for both the Graph and the QA Chain
 from langchain_neo4j import Neo4jGraph, GraphCypherQAChain
 from langchain_core.prompts import PromptTemplate
 from langchain_groq import ChatGroq
-import api_keys
 
-def create_qa_chain(
-    neo4j_uri: str,
-    neo4j_username: str,
-    neo4j_password: str
-):
+def create_qa_chain(neo4j_uri, neo4j_username, neo4j_password):
     """
-    Create a Graph QA chain using Groq Llama model + Neo4j.
-    We bypass the APOC requirement by providing a manual schema.
+    Creates a generalized Graph QA chain. 
+    Uses APOC to dynamically detect the schema of the current database.
     """
-
-    # 1. Connect to Graph
+    
+    # 1. Connect to the Graph
+    # refresh_schema=True utilizes APOC to map the DB structure automatically
     graph = Neo4jGraph(
         url=neo4j_uri,
         username=neo4j_username,
         password=neo4j_password,
-        refresh_schema=False
+        refresh_schema=True 
     )
 
-    # 2. Define your schema manually since APOC is missing
-    # Direction and structure are critical here
-    manual_schema = """
-    Node Properties:
-    - Table {id, name, database}
-    - Mapping {id, name}
-    - Task {id, name, task_type, mapping}
-    - Column {id, name, table, datatype}
-    - Database {id, name}
-
-    Relationships:
-    - (:Mapping)-[:READS]->(:Table)
-    - (:Mapping)-[:WRITES]->(:Table)
-    - (:Task)-[:RUNS_MAPPING]->(:Mapping)
-    - (:Table)-[:HAS_COLUMN]->(:Column)
-    - (:Database)-[:HAS_TABLE]->(:Table)
-    """
-
-    # 3. Initialize LLM
+    # 2. Initialize the LLM
     llm = ChatGroq(
         model="llama-3.3-70b-versatile",
         temperature=0
     )
 
-    # 4. CUSTOM CYPHER PROMPT
+    # 3. DYNAMIC CYPHER GENERATION PROMPT
     cypher_template = """
-    You are a Neo4j expert. Given an input question, create a syntactically correct Cypher query.
+    You are an expert Neo4j developer. Given a user question, create a syntactically correct Cypher query.
     
-    SCHEMA:
+    SCHEMA INFORMATION:
     {schema}
 
-    RULES:
-    1. Use ONLY the relationship types and property names provided in the schema.
-    2. DIRECTION MATTERS: 
-       - (Task)-[:RUNS_MAPPING]->(Mapping)
-       - (Mapping)-[:WRITES]->(Table)
-       - (Mapping)-[:READS]->(Table)
-       - (Database)-[:HAS_TABLE]->(Table)
-       - (Table)-[:HAS_COLUMN]->(Column)
-    3. If asked for "functions", search for Task nodes (specifically task_type 'Session').
-    4. Match on node property `id` or `name`. If the user mentions a specific name like 'm_Load_Customer', try to match on `m.id` first then `m.name`.
-    5. COLUMNS: Do not look for a 'columns' property. Use the (Table)-[:HAS_COLUMN]->(Column) relationship.
-    6. DATABASES: Use (Database)-[:HAS_TABLE]->(Table) to find which DB owns a table.
-    7. VERY IMPORTANT: Always RETURN specific properties like `t.name` or `m.name` instead of the whole node.
-    8. Output ONLY the raw Cypher query. No markdown, no 'cypher' prefix, no explanations.
+    CRITICAL RULES:
+    1. Use ONLY the labels, relationships, and properties provided in the SCHEMA above.
+    2. STRING MATCHING: Always use case-insensitive matching for user input. 
+       Example: WHERE toLower(n.name) CONTAINS toLower('search_term')
+    3. RELATIONSHIPS: Ensure your query follows the direction defined in the SCHEMA.
+    4. PROJECTIONS: Return specific properties (e.g., n.name, n.id) instead of the raw node 'n'.
+    5. LIMIT: Limit the result to 20 unless the user specifies a different count.
 
     Question: {question}
     Cypher Query:"""
@@ -77,35 +47,32 @@ def create_qa_chain(
         template=cypher_template
     )
 
-    # 5. CUSTOM QA PROMPT
+    # 4. NATURAL LANGUAGE RESPONSE PROMPT
     qa_template = """
-    You are an expert data analyst assistant. 
-    You have been provided with a question and the raw results from a Neo4j database.
-    
+    You are a professional Data Analyst. Answer the question based on the database results provided.
+
     Question: {question}
-    Context (Database Results): {context}
+    Context (Graph Data): {context}
 
-    Instructions:
-    1. Look closely at the Context. If a value (like 'Teradata', 's_Load_Customer', or 'm_Load_Customer') is present, it is the correct answer to the question.
-    2. Do NOT say the information is missing if there are values in the context.
-    3. In Informatica terms, 'Tasks' or 'Sessions' are the 'functions' the user is asking about.
-    4. If 't.name' is 's_Load_Customer', then 's_Load_Customer' is the answer.
-    5. If the context is strictly empty [], then say you couldn't find that information.
-    6. Be concise and direct.
+    INSTRUCTIONS:
+    1. If the context is empty [], state that no information was found in the current graph.
+    2. If context contains data, summarize it clearly and directly. 
+    3. Do not mention "the database" or "the context" in your final answer.
 
-    Answer:"""
+    Final Answer:"""
     
     qa_prompt = PromptTemplate(
         input_variables=["question", "context"],
         template=qa_template
     )
 
-    # 6. Build the Chain
+    # 5. Build the Chain
+    # graph.get_schema provides the APOC-detected structure
     chain = GraphCypherQAChain.from_llm(
         llm=llm,
         graph=graph,
         verbose=True,
-        cypher_prompt=cypher_prompt.partial(schema=manual_schema),
+        cypher_prompt=cypher_prompt.partial(schema=graph.get_schema),
         qa_prompt=qa_prompt,
         return_intermediate_steps=True,
         allow_dangerous_requests=True
@@ -113,55 +80,37 @@ def create_qa_chain(
 
     return chain
 
-def ask_graph_question(
-    chain,
-    question: str
-):
+def ask_graph_question(chain, question):
     """
-    Executes a single question against the provided chain and prints formatted output.
+    Executes a question and prints the result.
     """
     try:
         result = chain.invoke({"query": question})
+        print(f"\nQUESTION: {question}")
         
-        print("\n" + "="*60)
-        print(f"❓ QUESTION: {question}")
+        if "intermediate_steps" in result and result["intermediate_steps"]:
+            cypher = result["intermediate_steps"][0]
+            if isinstance(cypher, dict): 
+                cypher = cypher.get("query")
+            print(f"GENERATED CYPHER: {cypher}")
 
-        if "intermediate_steps" in result:
-            steps = result["intermediate_steps"]
-            query = "Unknown"
-            if len(steps) > 0:
-                if isinstance(steps[0], dict):
-                    query = steps[0].get("query", "No query key")
-                else:
-                    query = str(steps[0])
-            
-            print(f"🔍 CYPHER: {query}")
-
-        print(f"💡 RESULT: {result['result']}")
-        print("="*60)
+        print(f"ANSWER: {result['result']}")
+        print("-" * 60)
     except Exception as e:
-        print(f"\n❌ ERROR for question '{question}': {e}")
+        print(f"\nERROR executing '{question}': {e}")
 
 if __name__ == "__main__":
-    # 1. Initialize variables from environment
     uri = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
     user = os.environ.get("NEO4J_USERNAME", "neo4j")
     pwd = os.environ.get("NEO4J_PASSWORD", "password")
 
-    # 2. Setup Chain once for all questions
-    print("🔄 Initializing QA Chain...")
     qa_chain = create_qa_chain(uri, user, pwd)
-
-    # 3. Define Test Questions
-    test_questions = [
-        "Which functions write to CUSTOMER_FINAL?",
-        "What mappings read from CUSTOMER_RAW?",
-        "List all tasks that run the mapping m_Load_Customer.",
-        "Which database contains the table CUSTOMER_RAW?",
-        "What are the columns in the table CUSTOMER_FINAL?"
+    
+    test_q = [
+        "What are the different types of nodes in this graph?",
+        "List all unique labels and their relationships.",
+        "Which tables are connected to the database 'Teradata'?"
     ]
 
-    # 4. Loop and run
-    print("\n🚀 Starting Batch QA Test Execution...\n")
-    for q in test_questions:
+    for q in test_q:
         ask_graph_question(qa_chain, q)

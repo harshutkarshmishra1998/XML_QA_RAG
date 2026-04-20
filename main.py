@@ -9,10 +9,6 @@ file_name = "sample_1"
 input_path = f"files/{file_name}.xml"
 output_path = f"files/{file_name}.jsonl"
 
-uri = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
-user = os.environ.get("NEO4J_USERNAME", "neo4j")
-pwd = os.environ.get("NEO4J_PASSWORD", "password")
-
 xml_to_jsonl(input_path, output_path)
 
 load_graph_from_jsonl(output_path)

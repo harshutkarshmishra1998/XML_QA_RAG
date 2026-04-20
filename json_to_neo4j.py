@@ -3,7 +3,6 @@ from neo4j import GraphDatabase
 import os
 import api_keys
 
-
 class JSONLToNeo4j:
     def __init__(self):
         self.driver = GraphDatabase.driver(

@@ -58,6 +58,6 @@ def ask_graph_question(question):
 
     answer = llm.invoke(answer_prompt).content
     print("\nQUESTION:", question)
-    print("\nCYPHER:", cypher)
+    print("\nCYPHER:\n", cypher)
     print("\nANSWER:", answer)
-    print("-" * 60)
+    # print("-" * 60)

@@ -1,0 +1,58 @@
+[
+  {
+    "content": "Procedure DEMO_MARKET_DATA_LOAD performs operations: TRUNCATE, INSERT.",
+    "metadata": {
+      "type": "overview",
+      "procedure": "DEMO_MARKET_DATA_LOAD"
+    }
+  },
+  {
+    "content": "Truncates table DEMO_MARKET_STG before data load.",
+    "metadata": {
+      "type": "operation",
+      "procedure": "DEMO_MARKET_DATA_LOAD"
+    }
+  },
+  {
+    "content": "Inserts into DEMO_MARKET_STG from sources DEMO_PROJECTS, DEMO_SITES, DEMO_DEVICES.",
+    "metadata": {
+      "type": "operation",
+      "procedure": "DEMO_MARKET_DATA_LOAD"
+    }
+  },
+  {
+    "content": "Table involved: DEMO_PROJECTS",
+    "metadata": {
+      "type": "table",
+      "procedure": "DEMO_MARKET_DATA_LOAD"
+    }
+  },
+  {
+    "content": "Table involved: DEMO_SITES",
+    "metadata": {
+      "type": "table",
+      "procedure": "DEMO_MARKET_DATA_LOAD"
+    }
+  },
+  {
+    "content": "Table involved: DEMO_DEVICES",
+    "metadata": {
+      "type": "table",
+      "procedure": "DEMO_MARKET_DATA_LOAD"
+    }
+  },
+  {
+    "content": "Table involved: DEMO_MARKET_STG",
+    "metadata": {
+      "type": "table",
+      "procedure": "DEMO_MARKET_DATA_LOAD"
+    }
+  },
+  {
+    "content": "Columns inserted into DEMO_MARKET_STG: PROJECT_ID, SITE_CODE, REGION, DEVICE_TYPE, PORT_NUMBER, CHANNEL_ID, CREATED_DATE",
+    "metadata": {
+      "type": "column",
+      "procedure": "DEMO_MARKET_DATA_LOAD"
+    }
+  }
+]

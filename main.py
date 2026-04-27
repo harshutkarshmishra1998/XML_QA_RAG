@@ -4,7 +4,7 @@ from json_to_neo4j import load_graph_from_jsonl
 from neo4j_qa import ask_graph_question
 import api_keys
 
-file_name = "sample_1"
+file_name = "sample_2"
 
 input_path = f"files/{file_name}.xml"
 output_path = f"files/{file_name}.jsonl"

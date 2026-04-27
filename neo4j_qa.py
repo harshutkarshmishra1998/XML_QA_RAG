@@ -60,4 +60,3 @@ def ask_graph_question(question):
     print("\nQUESTION:", question)
     print("\nCYPHER:\n", cypher)
     print("\nANSWER:", answer)
-    # print("-" * 60)

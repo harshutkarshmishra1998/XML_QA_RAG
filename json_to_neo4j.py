@@ -60,6 +60,7 @@ def load_graph_from_jsonl(input_file_path: str):
         loader.load_jsonl(input_file_path)
     finally:
         loader.close()
+
 # CLI EN
 if __name__ == "__main__":
     load_graph_from_jsonl("files/sample.jsonl")

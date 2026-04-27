@@ -8,23 +8,20 @@ from sqlglot import parse_one, exp
 # CLEAN HELPERS
 # -----------------------------
 def clean_table_name(name):
-    name = name.replace('"', '').strip()
+    name = name.replace('"', '').strip().lower()
     if "." not in name:
         return f"vnadsprd.{name}"
-    return name.lower()
+    return name
 
 
 def is_valid_source(src):
     if not src:
         return False
-
     src = src.upper()
 
-    # filter constants / junk
     if src in ["NAUTILUS", "AVAILABLE", "MSERI"]:
         return False
 
-    # remove tiny tokens
     if len(src) <= 2:
         return False
 
@@ -37,7 +34,6 @@ def is_valid_source(src):
 def extract_dynamic_sql(stmt):
     if "EXECUTE IMMEDIATE" not in stmt.upper():
         return stmt
-
     parts = re.findall(r"'([^']*)'", stmt, re.DOTALL)
     return " ".join(parts) if parts else stmt
 
@@ -92,9 +88,29 @@ def parse_sql(stmt):
 
 
 # -----------------------------
-# AST HELPERS
+# AST HELPERS (UPGRADED)
 # -----------------------------
-def extract_alias_map(ast):
+def extract_tables(ast):
+    return list({
+        clean_table_name(t.this.sql())
+        for t in ast.find_all(exp.Table)
+    })
+
+
+def extract_ctes(ast):
+    cte_map = {}
+    for cte in ast.find_all(exp.CTE):
+        name = cte.alias
+        tables = [
+            clean_table_name(t.this.sql())
+            for t in cte.this.find_all(exp.Table)
+        ]
+        if name:
+            cte_map[name] = tables
+    return cte_map
+
+
+def extract_alias_map(ast, cte_map):
     alias_map = {}
 
     # direct tables
@@ -102,23 +118,28 @@ def extract_alias_map(ast):
         if t.alias:
             alias_map[t.alias] = clean_table_name(t.this.sql())
 
-    # subquery alias resolution (basic)
+    # subqueries (multi-table)
     for sub in ast.find_all(exp.Subquery):
         if sub.alias:
-            tables = []
-            for t in sub.this.find_all(exp.Table):
-                tables.append(clean_table_name(t.this.sql()))
+            tables = [
+                clean_table_name(t.this.sql())
+                for t in sub.this.find_all(exp.Table)
+            ]
             if tables:
-                alias_map[sub.alias] = tables[0]
+                alias_map[sub.alias] = tables
+
+    # merge CTEs
+    alias_map.update(cte_map)
 
     return alias_map
 
 
-def extract_tables(ast):
-    return list({
-        clean_table_name(t.this.sql())
-        for t in ast.find_all(exp.Table)
-    })
+def resolve_table(alias, alias_map):
+    val = alias_map.get(alias, alias)
+
+    if isinstance(val, list):
+        return val
+    return [clean_table_name(val)]
 
 
 def extract_joins(ast):
@@ -141,17 +162,15 @@ def extract_filters(ast):
 def detect_transformation(expr_sql):
     expr_sql = expr_sql.upper()
 
-    for keyword in ["CAST", "NVL", "CASE", "COALESCE", "CONCAT"]:
-        if keyword in expr_sql:
-            return True
-
-    return False
+    return any(fn in expr_sql for fn in [
+        "CAST(", "NVL(", "CASE ", "COALESCE(", "||", "+", "-"
+    ])
 
 
 # -----------------------------
-# COLUMN LINEAGE
+# COLUMN LINEAGE (UPGRADED)
 # -----------------------------
-def extract_column_lineage(ast, alias_map):
+def extract_column_lineage(ast, alias_map, known_tables):
     lineage = []
     select = ast.find(exp.Select)
 
@@ -160,26 +179,29 @@ def extract_column_lineage(ast, alias_map):
 
     for proj in select.expressions:
         target = proj.alias_or_name
-        sources = []
         expr_sql = proj.sql()
+        sources = set()
 
         for col in proj.find_all(exp.Column):
             table = col.table
             column = col.name
 
             if table:
-                table = alias_map.get(table, table)
-                table = clean_table_name(table)
+                resolved_tables = resolve_table(table, alias_map)
 
-                full = f"{table}.{column}"
+                for t in resolved_tables:
+                    if t not in known_tables:
+                        continue
 
-                if is_valid_source(full):
-                    sources.append(full)
+                    full = f"{t}.{column}"
+
+                    if is_valid_source(full):
+                        sources.add(full)
 
         if sources:
             lineage.append({
                 "target": target,
-                "sources": list(set(sources)),
+                "sources": list(sources),
                 "transformation": detect_transformation(expr_sql)
             })
 
@@ -206,14 +228,15 @@ def parse_insert(stmt):
         result["target_table"] = clean_table_name(tgt.group(1))
 
     if ast:
-        alias_map = extract_alias_map(ast)
+        cte_map = extract_ctes(ast)
+        alias_map = extract_alias_map(ast, cte_map)
 
         tables = extract_tables(ast)
         result["source_tables"] = tables
 
         result["joins"] = extract_joins(ast)
         result["filters"] = extract_filters(ast)
-        result["column_lineage"] = extract_column_lineage(ast, alias_map)
+        result["column_lineage"] = extract_column_lineage(ast, alias_map, tables)
 
     return result
 
@@ -281,14 +304,8 @@ def chunk_column_lineage(data):
 
         for col in op.get("column_lineage", []):
             for src in col["sources"]:
-                if col["transformation"]:
-                    chunks.add(
-                        f"{tgt}.{col['target']} ← {src} (transformed)"
-                    )
-                else:
-                    chunks.add(
-                        f"{tgt}.{col['target']} ← {src}"
-                    )
+                suffix = " (transformed)" if col["transformation"] else ""
+                chunks.add(f"{tgt}.{col['target']} ← {src}{suffix}")
 
     return list(chunks)
 
@@ -335,10 +352,7 @@ def build_documents(parsed):
     def add(c, t):
         docs.append({
             "content": c,
-            "metadata": {
-                "type": t,
-                "procedure": parsed["procedure"]
-            }
+            "metadata": {"type": t, "procedure": parsed["procedure"]}
         })
 
     add(chunk_overview(parsed), "overview")
@@ -371,7 +385,7 @@ def process_file(input_path):
 
 def main():
     input_path = "files/sample_4.pls"
-    output_path = "files/result_4_final_advanced.json"
+    output_path = "files/result_final_best.json"
 
     docs = process_file(input_path)
 

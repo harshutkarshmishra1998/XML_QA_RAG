@@ -17,6 +17,7 @@ def clean_table_name(name):
 def is_valid_source(src):
     if not src:
         return False
+
     src = src.upper()
 
     if src in ["NAUTILUS", "AVAILABLE", "MSERI"]:
@@ -88,7 +89,7 @@ def parse_sql(stmt):
 
 
 # -----------------------------
-# AST HELPERS (UPGRADED)
+# AST HELPERS (FINAL)
 # -----------------------------
 def extract_tables(ast):
     return list({
@@ -113,10 +114,10 @@ def extract_ctes(ast):
 def extract_alias_map(ast, cte_map):
     alias_map = {}
 
-    # direct tables
+    # direct table aliases
     for t in ast.find_all(exp.Table):
         if t.alias:
-            alias_map[t.alias] = clean_table_name(t.this.sql())
+            alias_map[t.alias] = [clean_table_name(t.this.sql())]
 
     # subqueries (multi-table)
     for sub in ast.find_all(exp.Subquery):
@@ -128,32 +129,48 @@ def extract_alias_map(ast, cte_map):
             if tables:
                 alias_map[sub.alias] = tables
 
-    # merge CTEs
+    # include CTEs
     alias_map.update(cte_map)
 
     return alias_map
 
 
-def resolve_table(alias, alias_map):
-    val = alias_map.get(alias, alias)
-
-    if isinstance(val, list):
-        return val
-    return [clean_table_name(val)]
+def resolve_alias(alias, alias_map):
+    if alias in alias_map:
+        return alias_map[alias]
+    return [clean_table_name(alias)]
 
 
-def extract_joins(ast):
+# -----------------------------
+# SQL REWRITE (NEW)
+# -----------------------------
+def rewrite_expression(expr_sql, alias_map):
+    """
+    Replace aliases in SQL string with actual table names
+    """
+    for alias, tables in alias_map.items():
+        for t in tables:
+            expr_sql = re.sub(rf"\b{alias}\.", f"{t}.", expr_sql)
+    return expr_sql
+
+
+def extract_joins(ast, alias_map):
     joins = []
+
     for j in ast.find_all(exp.Join):
         on = j.args.get("on")
         if on and hasattr(on, "sql"):
-            joins.append(on.sql())
+            sql = rewrite_expression(on.sql(), alias_map)
+            joins.append(sql)
+
     return list(set(joins))
 
 
-def extract_filters(ast):
+def extract_filters(ast, alias_map):
     where = ast.find(exp.Where)
-    return where.sql() if where else None
+    if where:
+        return rewrite_expression(where.sql(), alias_map)
+    return None
 
 
 # -----------------------------
@@ -168,7 +185,7 @@ def detect_transformation(expr_sql):
 
 
 # -----------------------------
-# COLUMN LINEAGE (UPGRADED)
+# COLUMN LINEAGE (FINAL)
 # -----------------------------
 def extract_column_lineage(ast, alias_map, known_tables):
     lineage = []
@@ -187,7 +204,7 @@ def extract_column_lineage(ast, alias_map, known_tables):
             column = col.name
 
             if table:
-                resolved_tables = resolve_table(table, alias_map)
+                resolved_tables = resolve_alias(table, alias_map)
 
                 for t in resolved_tables:
                     if t not in known_tables:
@@ -234,8 +251,8 @@ def parse_insert(stmt):
         tables = extract_tables(ast)
         result["source_tables"] = tables
 
-        result["joins"] = extract_joins(ast)
-        result["filters"] = extract_filters(ast)
+        result["joins"] = extract_joins(ast, alias_map)
+        result["filters"] = extract_filters(ast, alias_map)
         result["column_lineage"] = extract_column_lineage(ast, alias_map, tables)
 
     return result
@@ -385,7 +402,7 @@ def process_file(input_path):
 
 def main():
     input_path = "files/sample_4.pls"
-    output_path = "files/result_final_best.json"
+    output_path = "files/result_final_elite.json"
 
     docs = process_file(input_path)
 

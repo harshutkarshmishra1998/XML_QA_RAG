@@ -5,55 +5,72 @@ from sqlglot import parse_one, exp
 
 
 # -----------------------------
-# 🔥 EXTRACT DYNAMIC SQL
+# CLEAN HELPERS
 # -----------------------------
-def extract_dynamic_sql(stmt: str):
+def clean_table_name(name):
+    name = name.replace('"', '').strip()
+    if "." not in name:
+        return f"vnadsprd.{name}"
+    return name.lower()
+
+
+def is_valid_source(src):
+    if not src:
+        return False
+
+    src = src.upper()
+
+    # filter constants / junk
+    if src in ["NAUTILUS", "AVAILABLE", "MSERI"]:
+        return False
+
+    # remove tiny tokens
+    if len(src) <= 2:
+        return False
+
+    return True
+
+
+# -----------------------------
+# DYNAMIC SQL
+# -----------------------------
+def extract_dynamic_sql(stmt):
     if "EXECUTE IMMEDIATE" not in stmt.upper():
         return stmt
 
     parts = re.findall(r"'([^']*)'", stmt, re.DOTALL)
-    if parts:
-        return " ".join(parts)
-
-    return stmt
+    return " ".join(parts) if parts else stmt
 
 
 # -----------------------------
-# NORMALIZATION
+# NORMALIZE INPUT
 # -----------------------------
-def normalize_sql(text: str) -> str:
+def normalize_sql(text):
     text = re.sub(r'--.*', '', text)
     text = re.sub(r'\s+', ' ', text)
     return text.strip()
 
 
-def split_procedures(text: str):
+def split_procedures(text):
     pattern = r'CREATE OR REPLACE.*?PROCEDURE.*?END\s+\w+\s*;'
     matches = re.findall(pattern, text, re.IGNORECASE | re.DOTALL)
     return matches if matches else [text]
 
 
-# -----------------------------
-# 🔥 SAFE STATEMENT SPLITTER
-# -----------------------------
-def extract_statements(proc_text: str):
-    statements = []
-    current = ""
-    paren = 0
-    in_string = False
+def extract_statements(proc_text):
+    statements, current = [], ""
+    paren, in_string = 0, False
 
     for ch in proc_text:
         current += ch
 
         if ch == "'":
             in_string = not in_string
-
         elif not in_string:
             if ch == "(":
                 paren += 1
             elif ch == ")":
                 paren -= 1
-
             elif ch == ";" and paren == 0:
                 statements.append(current.strip())
                 current = ""
@@ -65,51 +82,52 @@ def extract_statements(proc_text: str):
 
 
 # -----------------------------
-# 🔥 SQL PARSER (FIXED)
+# SQL PARSE
 # -----------------------------
 def parse_sql(stmt):
     try:
-        clean_stmt = extract_dynamic_sql(stmt)
-
-        # DEBUG (remove later if needed)
-        print("\n====================")
-        print("CLEAN SQL:")
-        print(clean_stmt[:500])
-
-        return parse_one(clean_stmt, read="oracle")
-
-    except Exception as e:
-        print("PARSE FAILED:", e)
+        return parse_one(extract_dynamic_sql(stmt), read="oracle")
+    except:
         return None
 
 
 # -----------------------------
 # AST HELPERS
 # -----------------------------
+def extract_alias_map(ast):
+    alias_map = {}
+
+    # direct tables
+    for t in ast.find_all(exp.Table):
+        if t.alias:
+            alias_map[t.alias] = clean_table_name(t.this.sql())
+
+    # subquery alias resolution (basic)
+    for sub in ast.find_all(exp.Subquery):
+        if sub.alias:
+            tables = []
+            for t in sub.this.find_all(exp.Table):
+                tables.append(clean_table_name(t.this.sql()))
+            if tables:
+                alias_map[sub.alias] = tables[0]
+
+    return alias_map
+
+
 def extract_tables(ast):
-    tables = set()
-    for table in ast.find_all(exp.Table):
-        tables.add(table.sql())   # ✅ keeps schema
-    return list(tables)
+    return list({
+        clean_table_name(t.this.sql())
+        for t in ast.find_all(exp.Table)
+    })
 
-
-# def extract_joins(ast):
-#     joins = []
-#     for join in ast.find_all(exp.Join):
-#         if join.on:
-#             joins.append(join.on.sql())
-#     return joins
 
 def extract_joins(ast):
     joins = []
-
-    for join in ast.find_all(exp.Join):
-        on_clause = join.args.get("on")
-
-        if on_clause and hasattr(on_clause, "sql"):
-            joins.append(on_clause.sql())
-
-    return joins
+    for j in ast.find_all(exp.Join):
+        on = j.args.get("on")
+        if on and hasattr(on, "sql"):
+            joins.append(on.sql())
+    return list(set(joins))
 
 
 def extract_filters(ast):
@@ -117,27 +135,53 @@ def extract_filters(ast):
     return where.sql() if where else None
 
 
-def extract_column_lineage(ast):
-    lineage = []
+# -----------------------------
+# TRANSFORMATION DETECTION
+# -----------------------------
+def detect_transformation(expr_sql):
+    expr_sql = expr_sql.upper()
 
+    for keyword in ["CAST", "NVL", "CASE", "COALESCE", "CONCAT"]:
+        if keyword in expr_sql:
+            return True
+
+    return False
+
+
+# -----------------------------
+# COLUMN LINEAGE
+# -----------------------------
+def extract_column_lineage(ast, alias_map):
+    lineage = []
     select = ast.find(exp.Select)
+
     if not select:
         return lineage
 
-    for projection in select.expressions:
-        target = projection.alias_or_name
-
+    for proj in select.expressions:
+        target = proj.alias_or_name
         sources = []
-        for col in projection.find_all(exp.Column):
-            if col.table:
-                sources.append(f"{col.table}.{col.name}")
-            else:
-                sources.append(col.name)
+        expr_sql = proj.sql()
 
-        lineage.append({
-            "target": target,
-            "sources": list(set(sources))
-        })
+        for col in proj.find_all(exp.Column):
+            table = col.table
+            column = col.name
+
+            if table:
+                table = alias_map.get(table, table)
+                table = clean_table_name(table)
+
+                full = f"{table}.{column}"
+
+                if is_valid_source(full):
+                    sources.append(full)
+
+        if sources:
+            lineage.append({
+                "target": target,
+                "sources": list(set(sources)),
+                "transformation": detect_transformation(expr_sql)
+            })
 
     return lineage
 
@@ -145,7 +189,7 @@ def extract_column_lineage(ast):
 # -----------------------------
 # PARSERS
 # -----------------------------
-def parse_insert(stmt: str):
+def parse_insert(stmt):
     ast = parse_sql(stmt)
 
     result = {
@@ -157,40 +201,41 @@ def parse_insert(stmt: str):
         "column_lineage": []
     }
 
-    target = re.search(r'INSERT INTO\s+([\w\."]+)', stmt, re.IGNORECASE)
-    result["target_table"] = target.group(1).replace('"', '') if target else None
+    tgt = re.search(r'INSERT INTO\s+([\w\."]+)', stmt, re.IGNORECASE)
+    if tgt:
+        result["target_table"] = clean_table_name(tgt.group(1))
 
     if ast:
-        result["source_tables"] = extract_tables(ast)
+        alias_map = extract_alias_map(ast)
+
+        tables = extract_tables(ast)
+        result["source_tables"] = tables
+
         result["joins"] = extract_joins(ast)
         result["filters"] = extract_filters(ast)
-        result["column_lineage"] = extract_column_lineage(ast)
+        result["column_lineage"] = extract_column_lineage(ast, alias_map)
 
     return result
 
 
-def parse_truncate(stmt: str):
+def parse_truncate(stmt):
     match = re.search(r'TRUNCATE TABLE\s+([\w\."]+)', stmt, re.IGNORECASE)
     return {
         "type": "TRUNCATE",
-        "truncate_table": match.group(1).replace('"', '') if match else None
+        "truncate_table": clean_table_name(match.group(1)) if match else None
     }
 
 
-def parse_procedure(proc_text: str):
-    data = {
-        "procedure": None,
-        "operations": []
-    }
+def parse_procedure(proc_text):
+    data = {"procedure": None, "operations": []}
 
     name = re.search(r'PROCEDURE\s+"?([\w]+)"?', proc_text, re.IGNORECASE)
     if name:
         data["procedure"] = name.group(1)
 
-    statements = extract_statements(proc_text)
-
-    for stmt in statements:
-        stmt_upper = stmt.upper()
+    for stmt in extract_statements(proc_text):
+        clean = extract_dynamic_sql(stmt)
+        stmt_upper = clean.upper()
 
         if "INSERT INTO" in stmt_upper:
             data["operations"].append(parse_insert(stmt))
@@ -202,88 +247,108 @@ def parse_procedure(proc_text: str):
 
 
 # -----------------------------
-# CHUNK BUILDERS
+# CHUNKS
 # -----------------------------
+def chunk_tables(data):
+    tables = set()
+
+    for op in data["operations"]:
+        tables.update(op.get("source_tables", []))
+        if op.get("target_table"):
+            tables.add(op["target_table"])
+
+    return [f"Table involved: {t}" for t in sorted(tables)]
+
+
+def chunk_lineage(data):
+    chunks = set()
+
+    for op in data["operations"]:
+        tgt = op.get("target_table")
+
+        for src in op.get("source_tables", []):
+            if src != tgt:
+                chunks.add(f"{src} → {tgt}")
+
+    return list(chunks)
+
+
+def chunk_column_lineage(data):
+    chunks = set()
+
+    for op in data["operations"]:
+        tgt = op.get("target_table")
+
+        for col in op.get("column_lineage", []):
+            for src in col["sources"]:
+                if col["transformation"]:
+                    chunks.add(
+                        f"{tgt}.{col['target']} ← {src} (transformed)"
+                    )
+                else:
+                    chunks.add(
+                        f"{tgt}.{col['target']} ← {src}"
+                    )
+
+    return list(chunks)
+
+
+def chunk_joins(data):
+    return list(set(
+        f"Join condition: {j}"
+        for op in data["operations"]
+        for j in op.get("joins", [])
+    ))
+
+
+def chunk_filters(data):
+    return list(set(
+        f"Filter applied: {op['filters']}"
+        for op in data["operations"]
+        if op.get("filters")
+    ))
+
+
 def chunk_overview(data):
     ops = [op["type"] for op in data["operations"]]
     return f"Procedure {data['procedure']} performs operations: {', '.join(ops)}."
 
 
-def chunk_execution_flow(data):
+def chunk_flow(data):
     steps = []
+
     for i, op in enumerate(data["operations"], 1):
         if op["type"] == "TRUNCATE":
             steps.append(f"{i}. Truncate {op['truncate_table']}")
         elif op["type"] == "INSERT":
             steps.append(f"{i}. Load {op['target_table']}")
+
     return "Execution Flow: " + " → ".join(steps)
 
 
-def chunk_tables(data):
-    tables = set()
-    for op in data["operations"]:
-        if op.get("target_table"):
-            tables.add(op["target_table"])
-        if op.get("truncate_table"):
-            tables.add(op["truncate_table"])
-        tables.update(op.get("source_tables", []))
-    return [f"Table involved: {t}" for t in tables]
-
-
-def chunk_joins(data):
-    return [f"Join condition: {j}" for op in data["operations"] for j in op.get("joins", [])]
-
-
-def chunk_filters(data):
-    return [f"Filter applied: {op['filters']}" for op in data["operations"] if op.get("filters")]
-
-
-def chunk_lineage(data):
-    return [f"{src} → {op.get('target_table')}" for op in data["operations"] for src in op.get("source_tables", [])]
-
-
-def chunk_column_lineage(data):
-    chunks = []
-    for op in data["operations"]:
-        tgt = op.get("target_table")
-        for col in op.get("column_lineage", []):
-            for src in col["sources"]:
-                chunks.append(f"{tgt}.{col['target']} ← {src}")
-    return chunks
-
-
 # -----------------------------
-# DOCUMENT BUILDER
+# BUILD DOCS
 # -----------------------------
-def build_documents(parsed_proc):
+def build_documents(parsed):
     docs = []
 
-    def add(content, type_):
+    def add(c, t):
         docs.append({
-            "content": content,
+            "content": c,
             "metadata": {
-                "type": type_,
-                "procedure": parsed_proc["procedure"]
+                "type": t,
+                "procedure": parsed["procedure"]
             }
         })
 
-    add(chunk_overview(parsed_proc), "overview")
-    add(chunk_execution_flow(parsed_proc), "flow")
+    add(chunk_overview(parsed), "overview")
+    add(chunk_flow(parsed), "flow")
 
-    for c in chunk_tables(parsed_proc):
-        add(c, "table")
-
-    for c in chunk_lineage(parsed_proc):
-        add(c, "lineage")
-
-    for c in chunk_column_lineage(parsed_proc):
-        add(c, "column_lineage")
-
-    for c in chunk_joins(parsed_proc):
-        add(c, "join")
-
-    for c in chunk_filters(parsed_proc):
-        add(c, "filter")
+    for c in chunk_tables(parsed): add(c, "table")
+    for c in chunk_lineage(parsed): add(c, "lineage")
+    for c in chunk_column_lineage(parsed): add(c, "column_lineage")
+    for c in chunk_joins(parsed): add(c, "join")
+    for c in chunk_filters(parsed): add(c, "filter")
 
     return docs
 
@@ -291,26 +356,22 @@ def build_documents(parsed_proc):
 # -----------------------------
 # MAIN
 # -----------------------------
-def process_file(input_path: str):
+def process_file(input_path):
     with open(input_path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    normalized = normalize_sql(content)
-    procedures = split_procedures(normalized)
+    docs = []
 
-    all_docs = []
-
-    for proc in procedures:
+    for proc in split_procedures(normalize_sql(content)):
         parsed = parse_procedure(proc)
-        docs = build_documents(parsed)
-        all_docs.extend(docs)
+        docs.extend(build_documents(parsed))
 
-    return all_docs
+    return docs
 
 
 def main():
     input_path = "files/sample_4.pls"
-    output_path = "files/result_4_new.json"
+    output_path = "files/result_4_final_advanced.json"
 
     docs = process_file(input_path)
 

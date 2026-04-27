@@ -1,0 +1,541 @@
+[
+  {
+    "content": "Procedure VNADSPRD performs operations: TRUNCATE, INSERT, TRUNCATE, INSERT.",
+    "metadata": {
+      "type": "overview",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Execution Flow: 1. Truncate vnadsprd.IEN_MARKET_INPUT_LIST_STG \u2192 2. Load vnadsprd.IEN_MARKET_INPUT_LIST_STG \u2192 3. Truncate vnadsprd.IEN_MARKET_INPUT_LIST \u2192 4. Load vnadsprd.IEN_MARKET_INPUT_LIST",
+    "metadata": {
+      "type": "flow",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Table involved: vnadsprd.ICOE_EQUIPMENT_TBL AS MSE",
+    "metadata": {
+      "type": "table",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Table involved: vnadsprd.NAUT_TRAIL_ELEMENT AS TE",
+    "metadata": {
+      "type": "table",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Table involved: vnadsprd.ICOE_SITE_TBL AS ZSITE",
+    "metadata": {
+      "type": "table",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Table involved: vnadsprd.NAUT_TRAIL_CHANNEL AS TC",
+    "metadata": {
+      "type": "table",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Table involved: vnadsprd.NAUT_TRAIL_COMPONENT_ELEMENT AS TCE",
+    "metadata": {
+      "type": "table",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Table involved: vnadsprd.NAUT_TRAIL AS T",
+    "metadata": {
+      "type": "table",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Table involved: vnadsprd.IEN_MARKET_INPUT_LIST_STG",
+    "metadata": {
+      "type": "table",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Table involved: vnadsprd.IEN_MARKET_INPUT_LIST",
+    "metadata": {
+      "type": "table",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Table involved: vnadsprd.ICOE_SITE_TBL AS S",
+    "metadata": {
+      "type": "table",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Table involved: vnadsprd.IEN_MARKET_INPUT_LIST_STG AS G JOIN vnadsprd.icoe_pvnr_t_logical_port AS P ON ((P.PORT_REFERENCE_ID = G.PORT_REFERENCE_ID))",
+    "metadata": {
+      "type": "table",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Table involved: vnadsprd.icoe_pvnr_t_logical_port AS P",
+    "metadata": {
+      "type": "table",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Table involved: vnadsprd.ICOE_EQUIPMENT_TBL AS E",
+    "metadata": {
+      "type": "table",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Table involved: vnadsprd.IEN_UT_PMO_TRACKER AS MARKET",
+    "metadata": {
+      "type": "table",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Table involved: vnadsprd.ICOE_SITE_TBL AS ASITE",
+    "metadata": {
+      "type": "table",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Table involved: vnadsprd.NAUT_TRAIL AS VW",
+    "metadata": {
+      "type": "table",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Table involved: vnadsprd.NAUT_TRAIL_ELEMENT AS E",
+    "metadata": {
+      "type": "table",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.NAUT_TRAIL_ELEMENT AS TE \u2192 vnadsprd.IEN_MARKET_INPUT_LIST_STG",
+    "metadata": {
+      "type": "lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.NAUT_TRAIL_CHANNEL AS TC \u2192 vnadsprd.IEN_MARKET_INPUT_LIST_STG",
+    "metadata": {
+      "type": "lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.NAUT_TRAIL_COMPONENT_ELEMENT AS TCE \u2192 vnadsprd.IEN_MARKET_INPUT_LIST_STG",
+    "metadata": {
+      "type": "lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.ICOE_SITE_TBL AS ZSITE \u2192 vnadsprd.IEN_MARKET_INPUT_LIST_STG",
+    "metadata": {
+      "type": "lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST_STG \u2192 vnadsprd.IEN_MARKET_INPUT_LIST_STG",
+    "metadata": {
+      "type": "lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.ICOE_SITE_TBL AS ASITE \u2192 vnadsprd.IEN_MARKET_INPUT_LIST_STG",
+    "metadata": {
+      "type": "lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.NAUT_TRAIL AS T \u2192 vnadsprd.IEN_MARKET_INPUT_LIST_STG",
+    "metadata": {
+      "type": "lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.NAUT_TRAIL AS VW \u2192 vnadsprd.IEN_MARKET_INPUT_LIST_STG",
+    "metadata": {
+      "type": "lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.NAUT_TRAIL_ELEMENT AS E \u2192 vnadsprd.IEN_MARKET_INPUT_LIST_STG",
+    "metadata": {
+      "type": "lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.ICOE_EQUIPMENT_TBL AS MSE \u2192 vnadsprd.IEN_MARKET_INPUT_LIST",
+    "metadata": {
+      "type": "lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.ICOE_SITE_TBL AS S \u2192 vnadsprd.IEN_MARKET_INPUT_LIST",
+    "metadata": {
+      "type": "lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST \u2192 vnadsprd.IEN_MARKET_INPUT_LIST",
+    "metadata": {
+      "type": "lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST_STG AS G JOIN vnadsprd.icoe_pvnr_t_logical_port AS P ON ((P.PORT_REFERENCE_ID = G.PORT_REFERENCE_ID)) \u2192 vnadsprd.IEN_MARKET_INPUT_LIST",
+    "metadata": {
+      "type": "lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.icoe_pvnr_t_logical_port AS P \u2192 vnadsprd.IEN_MARKET_INPUT_LIST",
+    "metadata": {
+      "type": "lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.ICOE_EQUIPMENT_TBL AS E \u2192 vnadsprd.IEN_MARKET_INPUT_LIST",
+    "metadata": {
+      "type": "lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_UT_PMO_TRACKER AS MARKET \u2192 vnadsprd.IEN_MARKET_INPUT_LIST",
+    "metadata": {
+      "type": "lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST_STG.TRAIL_ID \u2190 X.TRAIL_ID",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST_STG.TRAIL_NAME \u2190 X.TRAIL_NAME",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST_STG.STATUS \u2190 X.STATUS",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST_STG.TYPE \u2190 X.TYPE",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST_STG.VERSION \u2190 X.VERSION",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST_STG.SEQUENCE \u2190 TCE.SEQUENCE",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST_STG.PORT_REFERENCE_ID \u2190 T.Z_PORT_ID_REVERSE",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST_STG.SOURCE \u2190 NAUTILUS",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST_STG.CHANNEL_NAME \u2190 TC.CHANNEL_NAME",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST_STG.SEQUENCE_NUMBER \u2190 TC.SEQUENCE_NUMBER",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST_STG.PORT_STATUS \u2190 TC.STATUS",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST_STG.ELEMENT_TYPE \u2190 TE.ELEMENT_TYPE",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST_STG.PROJECT_ID \u2190 X.PROJECT_ID",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST_STG.ACLLI \u2190 X.ACLLI",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST_STG.ZCLLI \u2190 X.ZCLLI",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.TRAIL_ID \u2190 TRAIL_ID",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.market_name \u2190 market.VZB_MARKET_CITY_OR_VZT_REGION",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.market_name \u2190 Available",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.market_area \u2190 A",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.market_area \u2190 market.STATE",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.market_area \u2190 S.CLLI",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.market_area \u2190 N",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.EQUIP_CLLI \u2190 A",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.EQUIP_CLLI \u2190 S.CLLI",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.EQUIP_CLLI \u2190 N",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.TRAIl_NAME \u2190 G.TRAIL_NAME",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.TID_LOGICAL \u2190 MSE.TID_LOGICAL",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.TID_LOGICAL \u2190 MSERI",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.TID_LOGICAL \u2190 E.SHELF_TYPE",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.TID_LOGICAL \u2190 E.TID_LOGICAL",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.ALTERNATE_NAME \u2190 E.SHELF_TYPE",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.ALTERNATE_NAME \u2190 MSERI",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.ALTERNATE_NAME \u2190 MSE.ALTERNATE_NAME",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.ALTERNATE_NAME \u2190 E.ALTERNATE_NAME",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.NF_ID \u2190 A",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.NF_ID \u2190 G.NF_ID",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "vnadsprd.IEN_MARKET_INPUT_LIST.NF_ID \u2190 N",
+    "metadata": {
+      "type": "column_lineage",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Join condition: (MARKET.SITE_CLLI = S.CLLI)",
+    "metadata": {
+      "type": "join",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Join condition: ((E.SITE_REFERENCE_ID = S.SITE_REFERENCE_ID))",
+    "metadata": {
+      "type": "join",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Join condition: ((E.PHYSICAL_EQUIPMENT_REFERENC_ID = MSE.EQP_REFERENCE_ID))",
+    "metadata": {
+      "type": "join",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Join condition: ((P.EQP_REFERENCE_ID = E.EQP_REFERENCE_ID))",
+    "metadata": {
+      "type": "join",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Join condition: ((P.PORT_REFERENCE_ID = G.PORT_REFERENCE_ID))",
+    "metadata": {
+      "type": "join",
+      "procedure": "VNADSPRD"
+    }
+  },
+  {
+    "content": "Filter applied: WHERE T.TRAIL_ID = X.PARENT_TRAIL_ID AND TC.PARENT_TRAIL_ID = X.PARENT_TRAIL_ID AND TC.CHANNEL_NAME = CAST(X.CHANNEL_NAME AS TEXT) AND TE.CHANNEL_NAME = CAST(X.CHANNEL_NAME AS TEXT) AND TE.PARENT_TRAIL_ID = X.PARENT_TRAIL_ID AND TCE.ELEMENT_ID = TE.ELEMENT_ID",
+    "metadata": {
+      "type": "filter",
+      "procedure": "VNADSPRD"
+    }
+  }
+]

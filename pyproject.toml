@@ -11,5 +11,6 @@ dependencies = [
     "langchain-neo4j>=0.9.0",
     "neo4j>=6.1.0",
     "openai>=2.32.0",
+    "sqlglot>=30.6.0",
     "streamlit>=1.56.0",
 ]

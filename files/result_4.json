@@ -7,37 +7,9 @@
     }
   },
   {
-    "content": "Truncates table vnadsprd.IEN_MARKET_INPUT_LIST_STG before data load.",
+    "content": "Execution Flow: 1. Truncate vnadsprd.IEN_MARKET_INPUT_LIST_STG \u2192 2. Load vnadsprd.IEN_MARKET_INPUT_LIST_STG \u2192 3. Truncate vnadsprd.IEN_MARKET_INPUT_LIST \u2192 4. Load vnadsprd.IEN_MARKET_INPUT_LIST",
     "metadata": {
-      "type": "operation",
-      "procedure": "VNADSPRD"
-    }
-  },
-  {
-    "content": "Inserts into vnadsprd.IEN_MARKET_INPUT_LIST_STG from sources vnadsprd.NAUT_TRAIL, vnadsprd.NAUT_TRAIL_ELEMENT.",
-    "metadata": {
-      "type": "operation",
-      "procedure": "VNADSPRD"
-    }
-  },
-  {
-    "content": "Truncates table vnadsprd.IEN_MARKET_INPUT_LIST before data load.",
-    "metadata": {
-      "type": "operation",
-      "procedure": "VNADSPRD"
-    }
-  },
-  {
-    "content": "Inserts into vnadsprd.IEN_MARKET_INPUT_LIST from sources vnadsprd.ICOE_SITE_TBL, vnadsprd.IEN_UT_PMO_TRACKER, vnadsprd.icoe_pvnr_t_logical_port, vnadsprd.ICOE_EQUIPMENT_TBL.",
-    "metadata": {
-      "type": "operation",
-      "procedure": "VNADSPRD"
-    }
-  },
-  {
-    "content": "Table involved: vnadsprd.IEN_MARKET_INPUT_LIST_STG",
-    "metadata": {
-      "type": "table",
+      "type": "flow",
       "procedure": "VNADSPRD"
     }
   },
@@ -49,58 +21,9 @@
     }
   },
   {
-    "content": "Table involved: vnadsprd.NAUT_TRAIL",
+    "content": "Table involved: vnadsprd.IEN_MARKET_INPUT_LIST_STG",
     "metadata": {
       "type": "table",
-      "procedure": "VNADSPRD"
-    }
-  },
-  {
-    "content": "Table involved: vnadsprd.ICOE_SITE_TBL",
-    "metadata": {
-      "type": "table",
-      "procedure": "VNADSPRD"
-    }
-  },
-  {
-    "content": "Table involved: vnadsprd.NAUT_TRAIL_ELEMENT",
-    "metadata": {
-      "type": "table",
-      "procedure": "VNADSPRD"
-    }
-  },
-  {
-    "content": "Table involved: vnadsprd.IEN_UT_PMO_TRACKER",
-    "metadata": {
-      "type": "table",
-      "procedure": "VNADSPRD"
-    }
-  },
-  {
-    "content": "Table involved: vnadsprd.ICOE_EQUIPMENT_TBL",
-    "metadata": {
-      "type": "table",
-      "procedure": "VNADSPRD"
-    }
-  },
-  {
-    "content": "Table involved: vnadsprd.icoe_pvnr_t_logical_port",
-    "metadata": {
-      "type": "table",
-      "procedure": "VNADSPRD"
-    }
-  },
-  {
-    "content": "Columns inserted into vnadsprd.IEN_MARKET_INPUT_LIST_STG: TRAIL_ID, TRAIL_NAME, STATUS, TYPE, VERSION, SEQUENCE, PORT_REFERENCE_ID, SOURCE, CHANNEL_NAME, SEQUENCE_NUMBER, PORT_STATUS, ELEMENT_TYPE, NF_ID, ACLLI, ZCLLI, LAST_REFRESHED_TS",
-    "metadata": {
-      "type": "column",
-      "procedure": "VNADSPRD"
-    }
-  },
-  {
-    "content": "Columns inserted into vnadsprd.IEN_MARKET_INPUT_LIST: TRAIL_ID, MARKET_NAME, MARKET_STATE, CLLI, TRAIL_NAME, TID_LOGICAL, ALTERNATE_NAME, NFID, CREATED_TS",
-    "metadata": {
-      "type": "column",
       "procedure": "VNADSPRD"
     }
   }

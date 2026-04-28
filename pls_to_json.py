@@ -402,7 +402,7 @@ def process_file(input_path):
 
 def main():
     input_path = "files/sample_4.pls"
-    output_path = "files/result_final_elite.json"
+    output_path = "files/result_4.json"
 
     docs = process_file(input_path)
 

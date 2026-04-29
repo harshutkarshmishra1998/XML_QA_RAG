@@ -186,12 +186,14 @@ def save_output(sql_list: List[str], output_path: str):
         for stmt in sql_list:
             f.write(stmt + "\n\n")
 
+values = [0, 1, 2, 3, 4, 5]
 
 if __name__ == "__main__":
-    input_file = "files/sample_4.pls"
-    output_file = "files/bq_script_4.sql"
+    for i in values:
+        input_file = f"files/pls_sample_{i}.pls"
+        output_file = f"files/bq_script_{i}.sql"
 
-    result = convert_pls_to_bq(input_file)
-    save_output(result, output_file)
+        result = convert_pls_to_bq(input_file)
+        save_output(result, output_file)
 
-    print("Done")
+        print(f"pls_sample_{i}: Done")

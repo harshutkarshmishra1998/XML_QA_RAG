@@ -1,7 +1,21 @@
-truncate table vnadsprd.IEN_MARKET_INPUT_LIST_STG
-
+-- BLOCK 1
+-- complexity_score: 5
+-- used_llm: True
 ```sql
-INSERT INTO `your_project.your_dataset.vnadsprd`.IEN_MARKET_INPUT_LIST_STG (
+BEGIN
+  EXECUTE IMMEDIATE 'TRUNCATE TABLE vnadsprd.IEN_MARKET_INPUT_LIST_STG';
+END;
+```
+
+-- BLOCK 2
+-- complexity_score: 4
+-- used_llm: True
+-- note: Applied deterministic function mapping (NVL/SYSDATE/etc.).
+-- note: Detected Oracle outer join markers and annotated them for LLM conversion.
+-- note: Qualified simple table references.
+```sql
+INSERT INTO `your_project.your_dataset.vnadsprd`.IEN_MARKET_INPUT_LIST_STG 
+(
   TRAIL_ID,
   TRAIL_NAME,
   STATUS,
@@ -37,96 +51,11 @@ SELECT DISTINCT
   ZSITE.CLLI AS ZCLLI,
   CURRENT_TIMESTAMP()
 FROM 
-  `your_project.your_dataset.vnadsprd`.NAUT_TRAIL_ELEMENT E
-INNER JOIN 
-  `your_project.your_dataset.vnadsprd`.NAUT_TRAIL VW
-  ON VW.TRAIL_ID = E.TRAIL_ID
-INNER JOIN 
-  `your_project.your_dataset.vnadsprd`.NAUT_TRAIL_COMPONENT_ELEMENT TCE
-  ON VW.TRAIL_ID = TCE.TRAIL_ID
-INNER JOIN 
-  `your_project.your_dataset.vnadsprd`.ICOE_SITE_TBL ASITE
-  ON VW.ACLLI = ASITE.CLLI
-INNER JOIN 
-  `your_project.your_dataset.vnadsprd`.ICOE_SITE_TBL ZSITE
-  ON VW.ZCLLI = ZSITE.CLLI
-WHERE 
-  E.ELEMENT_TYPE = 'value';
-```
-
-TRUNCATE TABLE vnadsprd.IEN_MARKET_INPUT_LIST
-
-drop index vnadsprd.IEN_TRAIL_NAME_IDX
-
-```sql
-INSERT INTO `your_project.your_dataset.vnadsprd`.IEN_MARKET_INPUT_LIST (
-  TRAIL_ID,
-  MARKET_NAME,
-  MARKET_STATE,
-  CLLI,
-  TRAIL_NAME,
-  TID_LOGICAL,
-  ALTERNATE_NAME,
-  NFID,
-  CREATED_TS
-)
-
-SELECT DISTINCT
-  TRAIL_ID,
-  COALESCE(market.VZB_MARKET_CITY_OR_VZT_REGION, ''),
-  -- Add the rest of the columns here, following the same pattern
-  -- ...
-FROM 
-  -- Add the table name here
-  -- ...
-```
-
-create index vnadsprd.IEN_TRAIL_NAME_IDX on vnadsprd.IEN_MARKET_INPUT_LIST(TRAIL_NAME)
-
-TRUNCATE TABLE vnadsprd.IEN_MARKET_INPUT_LIST_STG
-
-```sql
-INSERT INTO `your_project.your_dataset.vnadsprd`.IEN_MARKET_INPUT_LIST_STG (
-  TRAIL_ID,
-  TRAIL_NAME,
-  STATUS,
-  TYPE,
-  VERSION,
-  SEQUENCE,
-  PORT_REFERENCE_ID,
-  SOURCE,
-  CHANNEL_NAME,
-  SEQUENCE_NUMBER,
-  PORT_STATUS,
-  ELEMENT_TYPE,
-  NF_ID,
-  ACLLI,
-  ZCLLI,
-  LAST_REFRESHED_TS
-)
-SELECT DISTINCT 
-  VW.TRAIL_ID,
-  VW.TRAIL_NAME,
-  VW.STATUS,
-  VW.TYPE,
-  VW.VERSION,
-  TCE.SEQUENCE,
-  E.ELEMENT_REF_ID AS PORT_REFERENCE_ID,
-  E.SOURCE,
-  E.CHANNEL_NAME,
-  NULL AS SEQUENCE_NUMBER,
-  NULL AS PORT_STATUS,
-  E.ELEMENT_TYPE,
-  VW.PROJECT_ID,
-  ASITE.CLLI AS ACLLI,
-  ZSITE.CLLI AS ZCLLI,
-  TIMESTAMP(CURRENT_TIMESTAMP())
-FROM 
   `your_project.your_dataset.vnadsprd`.NAUT_TRAIL_ELEMENT E,
-  `your_project.your_dataset.vnadsprd`.NAUT_TRAIL VW,
-  `your_project.your_dataset.vnadsprd`.NAUT_TRAIL_COMPONENT_ELEMENT TCE,
-  `your_project.your_dataset.vnadsprd`.ICOE_SITE_TBL ASITE,
-  `your_project.your_dataset.vnadsprd`.ICOE_SITE_TBL ZSITE
+  vnadsprd.NAUT_TRAIL VW,
+  vnadsprd.NAUT_TRAIL_COMPONENT_ELEMENT TCE,
+  vnadsprd.ICOE_SITE_TBL ASITE,
+  vnadsprd.ICOE_SITE_TBL ZSITE
 WHERE 
   VW.TRAIL_ID = E.TRAIL_ID
   AND E.ELEMENT_TYPE = 'E'
@@ -153,12 +82,12 @@ SELECT
   X.PROJECT_ID,
   X.ACLLI,
   X.ZCLLI,
-  TIMESTAMP(CURRENT_TIMESTAMP())
+  CURRENT_TIMESTAMP()
 FROM 
   `your_project.your_dataset.vnadsprd`.NAUT_TRAIL T,
-  `your_project.your_dataset.vnadsprd`.NAUT_TRAIL_CHANNEL TC,
-  `your_project.your_dataset.vnadsprd`.NAUT_TRAIL_COMPONENT_ELEMENT TCE,
-  `your_project.your_dataset.vnadsprd`.NAUT_TRAIL_ELEMENT TE,
+  vnadsprd.NAUT_TRAIL_CHANNEL TC,
+  vnadsprd.NAUT_TRAIL_COMPONENT_ELEMENT TCE,
+  vnadsprd.NAUT_TRAIL_ELEMENT TE,
   (
     SELECT 
       VW.TRAIL_ID,
@@ -173,9 +102,9 @@ FROM
       ZSITE.CLLI AS ZCLLI
     FROM 
       `your_project.your_dataset.vnadsprd`.NAUT_TRAIL_ELEMENT TE,
-      `your_project.your_dataset.vnadsprd`.NAUT_TRAIL VW,
-      `your_project.your_dataset.vnadsprd`.ICOE_SITE_TBL ASITE,
-      `your_project.your_dataset.vnadsprd`.ICOE_SITE_TBL ZSITE
+      vnadsprd.NAUT_TRAIL VW,
+      vnadsprd.ICOE_SITE_TBL ASITE,
+      vnadsprd.ICOE_SITE_TBL ZSITE
     WHERE 
       VW.TRAIL_ID = TE.TRAIL_ID
       AND TE.ELEMENT_TYPE = 'P'
@@ -218,12 +147,12 @@ SELECT
   X.PROJECT_ID,
   X.ACLLI,
   X.ZCLLI,
-  TIMESTAMP(CURRENT_TIMESTAMP())
+  CURRENT_TIMESTAMP()
 FROM 
   `your_project.your_dataset.vnadsprd`.NAUT_TRAIL T,
-  `your_project.your_dataset.vnadsprd`.NAUT_TRAIL_CHANNEL TC,
-  `your_project.your_dataset.vnadsprd`.NAUT_TRAIL_COMPONENT_ELEMENT TCE,
-  `your_project.your_dataset.vnadsprd`.NAUT_TRAIL_ELEMENT TE,
+  vnadsprd.NAUT_TRAIL_CHANNEL TC,
+  vnadsprd.NAUT_TRAIL_COMPONENT_ELEMENT TCE,
+  vnadsprd.NAUT_TRAIL_ELEMENT TE,
   (
     SELECT 
       VW.TRAIL_ID,
@@ -238,9 +167,9 @@ FROM
       ZSITE.CLLI AS ZCLLI
     FROM 
       `your_project.your_dataset.vnadsprd`.NAUT_TRAIL_ELEMENT TE,
-      `your_project.your_dataset.vnadsprd`.NAUT_TRAIL VW,
-      `your_project.your_dataset.vnadsprd`.ICOE_SITE_TBL ASITE,
-      `your_project.your_dataset.vnadsprd`.ICOE_SITE_TBL ZSITE
+      vnadsprd.NAUT_TRAIL VW,
+      vnadsprd.ICOE_SITE_TBL ASITE,
+      vnadsprd.ICOE_SITE_TBL ZSITE
     WHERE 
       VW.TRAIL_ID = TE.TRAIL_ID
       AND TE.ELEMENT_TYPE = 'P'
@@ -283,12 +212,12 @@ SELECT
   X.PROJECT_ID,
   X.ACLLI,
   X.ZCLLI,
-  TIMESTAMP(CURRENT_TIMESTAMP())
+  CURRENT_TIMESTAMP()
 FROM 
   `your_project.your_dataset.vnadsprd`.NAUT_TRAIL T,
-  `your_project.your_dataset.vnadsprd`.NAUT_TRAIL_CHANNEL TC,
-  `your_project.your_dataset.vnadsprd`.NAUT_TRAIL_COMPONENT_ELEMENT TCE,
-  `your_project.your_dataset.vnadsprd`.NAUT_TRAIL_ELEMENT TE,
+  vnadsprd.NAUT_TRAIL_CHANNEL TC,
+  vnadsprd.NAUT_TRAIL_COMPONENT_ELEMENT TCE,
+  vnadsprd.NAUT_TRAIL_ELEMENT TE,
   (
     SELECT 
       VW.TRAIL_ID,
@@ -303,9 +232,9 @@ FROM
       ZSITE.CLLI AS ZCLLI
     FROM 
       `your_project.your_dataset.vnadsprd`.NAUT_TRAIL_ELEMENT TE,
-      `your_project.your_dataset.vnadsprd`.NAUT_TRAIL VW,
-      `your_project.your_dataset.vnadsprd`.ICOE_SITE_TBL ASITE,
-      `your_project.your_dataset.vnadsprd`.ICOE_SITE_TBL ZSITE
+      vnadsprd.NAUT_TRAIL VW,
+      vnadsprd.ICOE_SITE_TBL ASITE,
+      vnadsprd.ICOE_SITE_TBL ZSITE
     WHERE 
       VW.TRAIL_ID = TE.TRAIL_ID
       AND TE.ELEMENT_TYPE = 'P'
@@ -348,12 +277,12 @@ SELECT
   X.PROJECT_ID,
   X.ACLLI,
   X.ZCLLI,
-  TIMESTAMP(CURRENT_TIMESTAMP())
+  CURRENT_TIMESTAMP()
 FROM 
   `your_project.your_dataset.vnadsprd`.NAUT_TRAIL T,
-  `your_project.your_dataset.vnadsprd`.NAUT_TRAIL_CHANNEL TC,
-  `your_project.your_dataset.vnadsprd`.NAUT_TRAIL_COMPONENT_ELEMENT TCE,
-  `your_project.your_dataset.vnadsprd`.NAUT_TRAIL_ELEMENT TE,
+  vnadsprd.NAUT_TRAIL_CHANNEL TC,
+  vnadsprd.NAUT_TRAIL_COMPONENT_ELEMENT TCE,
+  vnadsprd.NAUT_TRAIL_ELEMENT TE,
   (
     SELECT 
       VW.TRAIL_ID,
@@ -368,9 +297,9 @@ FROM
       ZSITE.CLLI AS ZCLLI
     FROM 
       `your_project.your_dataset.vnadsprd`.NAUT_TRAIL_ELEMENT TE,
-      `your_project.your_dataset.vnadsprd`.NAUT_TRAIL VW,
-      `your_project.your_dataset.vnadsprd`.ICOE_SITE_TBL ASITE,
-      `your_project.your_dataset.vnadsprd`.ICOE_SITE_TBL ZSITE
+      vnadsprd.NAUT_TRAIL VW,
+      vnadsprd.ICOE_SITE_TBL ASITE,
+      vnadsprd.ICOE_SITE_TBL ZSITE
     WHERE 
       VW.TRAIL_ID = TE.TRAIL_ID
       AND TE.ELEMENT_TYPE = 'P'
@@ -396,50 +325,92 @@ WHERE
   AND TCE.ELEMENT_ID = TE.ELEMENT_ID;
 ```
 
+-- BLOCK 3
+-- complexity_score: 0
+-- used_llm: False
+COMMIT
+
+-- BLOCK 4
+-- complexity_score: 4
+-- used_llm: True
 ```sql
-INSERT INTO `your_project.your_dataset.vnadsprd`.IEN_MARKET_INPUT_LIST (
-  TRAIL_ID,
-  MARKET_NAME,
-  MARKET_STATE,
-  CLLI,
-  TRAIL_NAME,
-  TID_LOGICAL,
-  ALTERNATE_NAME,
-  NFID,
-  CREATED_TS
-)
-
-SELECT DISTINCT
-  G.TRAIL_ID,
-  IF(market.VZB_MARKET_CITY_OR_VZT_REGION IS NULL, 'Not Available', market.VZB_MARKET_CITY_OR_VZT_REGION) AS market_name,
-  CASE 
-    WHEN market.STATE IS NOT NULL THEN market.STATE
-    ELSE IF(S.CLLI IS NULL, 'N/A', SUBSTR(S.CLLI, 5, 2))
-  END AS market_area,
-  IF(S.CLLI IS NULL, 'N/A', S.CLLI) AS EQUIP_CLLI,
-  G.TRAIL_NAME AS TRAIL_NAME,
-  CASE 
-    WHEN E.SHELF_TYPE = 'MSERI' THEN MSE.TID_LOGICAL
-    ELSE E.TID_LOGICAL
-  END AS TID_LOGICAL,
-  CASE 
-    WHEN E.SHELF_TYPE = 'MSERI' THEN MSE.ALTERNATE_NAME
-    ELSE E.ALTERNATE_NAME
-  END AS ALTERNATE_NAME,
-  IF(G.NF_ID IS NULL, 'N/A', G.NF_ID) AS NF_ID,
-  CURRENT_TIMESTAMP() AS CREATED_TS
-
-FROM 
-  `your_project.your_dataset.vnadsprd`.IEN_MARKET_INPUT_LIST_STG G
-  LEFT JOIN `your_project.your_dataset.vnadsprd`.icoe_pvnr_t_logical_port P 
-    ON G.PORT_REFERENCE_ID = P.PORT_REFERENCE_ID
-  LEFT JOIN `your_project.your_dataset.vnadsprd`.ICOE_EQUIPMENT_TBL E 
-    ON P.EQP_REFERENCE_ID = E.EQP_REFERENCE_ID
-  LEFT JOIN `your_project.your_dataset.vnadsprd`.ICOE_EQUIPMENT_TBL MSE 
-    ON E.PHYSICAL_EQUIPMENT_REFERENC_ID = MSE.EQP_REFERENCE_ID
-  LEFT JOIN `your_project.your_dataset.vnadsprd`.ICOE_SITE_TBL S 
-    ON E.SITE_REFERENCE_ID = S.SITE_REFERENCE_ID
-  LEFT JOIN `your_project.your_dataset.vnadsprd`.IEN_UT_PMO_TRACKER market 
-    ON market.SITE_CLLI = S.CLLI;
+BEGIN
+  EXECUTE IMMEDIATE "TRUNCATE TABLE vnadsprd.IEN_MARKET_INPUT_LIST";
+END;
 ```
 
+-- BLOCK 5
+-- complexity_score: 4
+-- used_llm: True
+```sql
+EXECUTE IMMEDIATE 'DROP INDEX IF EXISTS IEN_TRAIL_NAME_IDX';
+```
+
+-- BLOCK 6
+-- complexity_score: 4
+-- used_llm: True
+-- note: Applied deterministic function mapping (NVL/SYSDATE/etc.).
+-- note: Qualified simple table references.
+```sql
+BEGIN
+  INSERT INTO `your_project.your_dataset.vnadsprd`.IEN_MARKET_INPUT_LIST (
+    TRAIL_ID,
+    MARKET_NAME,
+    MARKET_STATE,
+    CLLI,
+    TRAIL_NAME,
+    TID_LOGICAL,
+    ALTERNATE_NAME,
+    NFID,
+    CREATED_TS
+  )
+  SELECT DISTINCT
+    G.TRAIL_ID,
+    IFNULL(market.VZB_MARKET_CITY_OR_VZT_REGION, 'Not Available') AS market_name,
+    CASE
+      WHEN market.STATE IS NOT NULL THEN market.STATE
+      ELSE IFNULL(SUBSTR(S.CLLI, 5, 2), 'N/A')
+    END AS market_area,
+    IFNULL(S.CLLI, 'N/A') AS EQUIP_CLLI,
+    G.TRAIL_NAME AS TRAIL_NAME,
+    CASE
+      WHEN E.SHELF_TYPE = 'MSERI' THEN MSE.TID_LOGICAL
+      ELSE E.TID_LOGICAL
+    END AS TID_LOGICAL,
+    CASE
+      WHEN E.SHELF_TYPE = 'MSERI' THEN MSE.ALTERNATE_NAME
+      ELSE E.ALTERNATE_NAME
+    END AS ALTERNATE_NAME,
+    IFNULL(G.NF_ID, 'N/A') AS NF_ID,
+    CURRENT_TIMESTAMP() AS CREATED_TS
+  FROM `your_project.your_dataset.vnadsprd`.IEN_MARKET_INPUT_LIST_STG G
+  JOIN `your_project.your_dataset.vnadsprd`.icoe_pvnr_t_logical_port P
+    ON P.PORT_REFERENCE_ID = G.PORT_REFERENCE_ID
+  JOIN `your_project.your_dataset.vnadsprd`.ICOE_EQUIPMENT_TBL E
+    ON P.EQP_REFERENCE_ID = E.EQP_REFERENCE_ID
+  LEFT JOIN `your_project.your_dataset.vnadsprd`.ICOE_EQUIPMENT_TBL MSE
+    ON E.PHYSICAL_EQUIPMENT_REFERENC_ID = MSE.EQP_REFERENCE_ID
+  JOIN `your_project.your_dataset.vnadsprd`.ICOE_SITE_TBL S
+    ON E.SITE_REFERENCE_ID = S.SITE_REFERENCE_ID
+  LEFT JOIN `your_project.your_dataset.vnadsprd`.IEN_UT_PMO_TRACKER market
+    ON market.SITE_CLLI = S.CLLI;
+END;
+```
+
+-- BLOCK 7
+-- complexity_score: 0
+-- used_llm: False
+COMMIT
+
+-- BLOCK 8
+-- complexity_score: 4
+-- used_llm: True
+```sql
+CREATE INDEX IF NOT EXISTS IEN_TRAIL_NAME_IDX
+ON vnadsprd.IEN_MARKET_INPUT_LIST(TRAIL_NAME);
+```
+
+-- BLOCK 9
+-- complexity_score: 0
+-- used_llm: False
+END

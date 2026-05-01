@@ -143,7 +143,7 @@ INPUT:
                 ]
             )
 
-            output = res.choices[0].message.content.strip()
+            output = res.choices[0].message.content.strip() #type: ignore
 
             validate_sql(output)
 

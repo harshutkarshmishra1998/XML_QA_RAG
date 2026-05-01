@@ -1,0 +1,320 @@
+PLSQL_TO_BIGQUERY_CONVERSION_PLAYBOOK_V3
+
+OBJECTIVE:
+Convert PL/SQL procedural code into production-grade BigQuery SQL with full preservation of:
+- logic
+- execution order
+- data correctness
+- idempotency
+
+---
+
+CORE PRINCIPLE:
+
+PL/SQL = procedural (step-by-step)
+BigQuery = declarative + scripting
+
+NEVER translate line-by-line.
+ALWAYS convert into:
+- set-based queries OR
+- ordered scripting blocks
+
+---
+
+EXECUTION MODE DECISION (MANDATORY):
+
+IF code contains:
+- variables
+- IF / LOOP
+- multiple DML steps
+
+→ USE SCRIPT MODE (BEGIN...END)
+
+ELSE
+→ USE QUERY MODE (CTE-based)
+
+---
+
+CONVERSION STRATEGY:
+
+STEP 1: PARSE
+Identify:
+- loops (FOR, WHILE, CURSOR)
+- variables
+- DML (INSERT, UPDATE, DELETE, MERGE)
+- control flow (IF, CASE)
+- dependencies between steps
+
+STEP 2: BUILD INTERMEDIATE LOGIC
+Convert into ordered steps:
+Example:
+[
+  "extract",
+  "transform",
+  "filter",
+  "load"
+]
+
+STEP 3: APPLY PATTERN RULES
+
+STEP 4: GENERATE SQL
+
+STEP 5: VALIDATE
+
+---
+
+========================
+SIMPLE CONVERSION RULES
+========================
+
+1. SELECT ONLY
+→ Direct conversion
+
+2. INSERT SELECT
+→ Direct conversion
+
+3. BASIC IF
+→ CASE WHEN
+
+4. SIMPLE AGGREGATION
+→ Direct conversion
+
+---
+
+========================
+COMPLEX CONVERSION RULES
+========================
+
+1. CURSOR / LOOP
+
+PL/SQL:
+FOR rec IN (...) LOOP
+  logic
+END LOOP;
+
+CONVERSION:
+- Replace with SELECT + JOIN / UNNEST
+- NEVER keep loop
+
+---
+
+2. NESTED LOOPS
+
+→ Flatten using:
+- JOINs
+- window functions
+- ARRAY + UNNEST
+
+---
+
+3. CONDITIONAL DML
+
+PL/SQL:
+IF condition THEN INSERT/UPDATE
+
+BigQuery:
+IF condition THEN
+  BEGIN
+    DML
+  END;
+END IF;
+
+---
+
+4. MULTI-STEP PIPELINE
+
+→ Convert into:
+- CTE chain (preferred)
+OR
+- TEMP tables (if reused multiple times)
+
+---
+
+5. UPSERT / MERGE
+
+PL/SQL:
+UPDATE + INSERT logic
+
+BigQuery:
+MERGE target T
+USING source S
+ON condition
+WHEN MATCHED THEN UPDATE
+WHEN NOT MATCHED THEN INSERT
+
+---
+
+6. VARIABLES
+
+DECLARE all variables at top
+
+SET using:
+SET var = (SELECT ...)
+
+---
+
+7. TEMP STATE
+
+Use:
+- WITH (CTE) for single-use
+- CREATE TEMP TABLE for reuse
+
+---
+
+========================
+EDGE CASE HANDLING
+========================
+
+1. NULL LOGIC
+
+NVL → IFNULL / COALESCE
+
+Ensure NULL-safe joins:
+use IS NULL explicitly
+
+---
+
+2. SEQUENCES
+
+sequence.NEXTVAL →
+
+Options:
+- GENERATE_UUID()
+- ROW_NUMBER() OVER()
+
+---
+
+3. DATE FUNCTIONS
+
+SYSDATE → CURRENT_TIMESTAMP()
+TRUNC(date) → DATE_TRUNC()
+
+---
+
+4. STRING FUNCTIONS
+
+|| → CONCAT
+SUBSTR → SUBSTR
+INSTR → STRPOS
+DECODE → CASE WHEN
+
+---
+
+5. EXCEPTION HANDLING
+
+No direct equivalent.
+
+Replace with:
+- SAFE_CAST
+- IF guards
+- optional logging
+
+DO NOT silently drop logic
+
+---
+
+6. DYNAMIC SQL
+
+EXECUTE IMMEDIATE →
+
+BigQuery:
+EXECUTE IMMEDIATE "query"
+
+---
+
+7. BULK OPERATIONS
+
+FORALL / BULK COLLECT →
+
+Convert to:
+INSERT INTO ... SELECT
+
+---
+
+8. TRANSACTIONS
+
+Always preserve order using:
+BEGIN...END
+
+---
+
+9. DUPLICATE PREVENTION
+
+Use:
+- MERGE
+- DISTINCT
+- QUALIFY ROW_NUMBER() = 1
+
+---
+
+10. PERFORMANCE
+
+- Push filters early
+- Avoid SELECT *
+- Use partition filters
+- Avoid repeated subqueries
+
+---
+
+========================
+HARD RULES (STRICT)
+========================
+
+- NO loops in output
+- NO dropped steps
+- NO reordered dependent logic
+- NO partial conversion
+- NO flattening complex logic into one query
+
+---
+
+========================
+IDEMPOTENCY (MANDATORY)
+========================
+
+Output must be safe to rerun.
+
+Techniques:
+- DELETE WHERE TRUE before INSERT
+- MERGE instead of INSERT
+- avoid duplicates
+
+---
+
+========================
+VALIDATION CHECKLIST
+========================
+
+- All loops removed
+- Execution order preserved
+- Variables handled
+- All DML steps present
+- Joins & filters intact
+- NULL logic preserved
+- No duplicate rows
+- Output schema correct
+- Query rerunnable (idempotent)
+
+---
+
+========================
+ANTI-PATTERNS (FORBIDDEN)
+========================
+
+- Loop-to-loop translation
+- Ignoring variables
+- Dropping intermediate logic
+- Reordering DML steps
+- Converting everything into one SELECT
+- Missing joins or filters
+
+---
+
+========================
+FINAL INSTRUCTION
+========================
+
+Always prioritize correctness over brevity.
+Never simplify logic if behavior changes.
+Only use defined patterns.
+Do not invent transformations.
